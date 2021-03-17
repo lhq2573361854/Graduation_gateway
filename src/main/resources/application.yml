@@ -1,0 +1,63 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.43.20:8848
+    gateway:
+      routes:
+        - id: product_route_user
+          uri: lb://nacos-provider-client
+          predicates:
+            - Path=/user/**
+        - id: product_route_category
+          uri: lb://nacos-provider-client
+          predicates:
+              - Path=/category/**
+        - id: product_route_category
+          uri: lb://nacos-provider-client
+          predicates:
+            - Path=/role/**
+        - id: product_route_article
+          uri: lb://nacos-provider-client
+          predicates:
+              - Path=/article/**
+        - id: product_route_comment
+          uri: lb://nacos-provider-client
+          predicates:
+              - Path=/comment/**
+        - id: product_route_authority
+          uri: lb://nacos-provider-client
+          predicates:
+              - Path=/authority/**
+        - id: product_route_websocket
+          uri: lb:ws://nacos-provider-client
+          predicates:
+            - Path=/websocket/**
+        - id: product_route_user
+          uri: lb://nacos-provider-client
+          predicates:
+            - Path=/leave-message/**
+        - id: product_route_field_explain
+          uri: lb://nacos-provider-client
+          predicates:
+            - Path=/field-explain/**
+        - id: product_route_common_api
+          uri: lb://nacos-provider-client
+          predicates:
+            - Path=/common-api/**
+  redis:
+    host: 192.168.43.20
+    password: root
+    port: 6379
+    jedis:
+      pool:
+        max-active: 8
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
