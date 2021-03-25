@@ -61,3 +61,13 @@ management:
     web:
       exposure:
         include: '*'
+phone:
+  message:
+    appId: 'hw_10106'
+    secretKey: 'f65645246c7037c05ddcb1d817441480'
+    version: '1.0'
+    signType: 'md5'
+    method: 'sms.message.send'
+    template_id: 'ST_2020101100000007'
+    type: 0
+    sign: 'tianling'

@@ -1,7 +1,9 @@
 package com.tianling.handler.exceptions;
 
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tianling.common.ExceptionMessage;
+import com.tianling.common.PathVariables;
 import com.tianling.exception.ValidateCodeException;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.cloud.gateway.support.NotFoundException;
@@ -36,9 +38,17 @@ public  abstract class AbstractExceptionHandler {
             AbstractExceptionHandler.DEFAULT_ERROR_CODE =  410;
         }else if(ex instanceof JsonProcessingException){
             errorMessage = ExceptionMessage.JSON_FORMAT_EXCEPTION;
-        }else{
+        }else if(ex instanceof RuntimeException){
+            if(StrUtil.containsIgnoreCase(ex.getMessage(), PathVariables.UNIQUE)){
+                errorMessage =ExceptionMessage.UNIQUE_EXCEPTION;
+            }else{
+                errorMessage = ex.getMessage();
+            }
+
+        }else {
             errorMessage = ex.getMessage();
         }
+
 
 
         return errorMessage;
