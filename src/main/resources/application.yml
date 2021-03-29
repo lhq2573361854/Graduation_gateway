@@ -10,43 +10,43 @@ spring:
     gateway:
       routes:
         - id: product_route_user
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
             - Path=/user/**
         - id: product_route_category
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
               - Path=/category/**
         - id: product_route_category
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
             - Path=/role/**
         - id: product_route_article
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
               - Path=/article/**
         - id: product_route_comment
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
               - Path=/comment/**
         - id: product_route_authority
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
               - Path=/authority/**
         - id: product_route_websocket
-          uri: lb:ws://nacos-provider-client
+          uri: ws://localhost:9001
           predicates:
             - Path=/websocket/**
         - id: product_route_user
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
             - Path=/leave-message/**
         - id: product_route_field_explain
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
             - Path=/field-explain/**
         - id: product_route_common_api
-          uri: lb://nacos-provider-client
+          uri: lb://nacos-consumer-client
           predicates:
             - Path=/common-api/**
   redis:
@@ -71,3 +71,5 @@ phone:
     template_id: 'ST_2020101100000007'
     type: 0
     sign: 'tianling'
+webfilter:
+  path: /code/**,/login,/logout,/websocket/**,/field-explain/**,/common-api/**,/code/**,/auth/phone,/tel/**,/addUser

@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.tianling.common.AuthenticationMessage;
 import com.tianling.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,13 +27,22 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 public class TokenAuthenticationFilter implements WebFilter {
-
+    @Value("#{'${webfilter.path}'.split(',')}")
+    String[] paths;
 
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+
         ServerHttpRequest request = exchange.getRequest();
         HttpHeaders headers = request.getHeaders();
+        String path = request.getURI().getPath();
+        for (String s : paths) {
+            if (StrUtil.contains(s, path)) {
+                return chain.filter(exchange);
+            }
+        }
+
         String authToken = headers.getFirst(AuthenticationMessage.AUTHENTICATIONTOKENPREFIX.getMessage() + AuthenticationMessage.AUTHENTICATIONTOKEN.getMessage());
         if (!StrUtil.isBlank(authToken) || StrUtil.contains(authToken,AuthenticationMessage.AUTHENTICATIONCLINETTOKENPREFIX.getMessage())) {
             UsernamePasswordAuthenticationToken authenticationToken;

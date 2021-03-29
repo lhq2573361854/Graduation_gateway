@@ -6,7 +6,9 @@ import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.code.kaptcha.Producer;
+import com.tianling.entities.Authority;
 import com.tianling.entities.ResponseInfo;
+import com.tianling.entities.Role;
 import com.tianling.entities.User;
 import com.tianling.handler.auth.entities.PhoneMessageResponseInfo;
 import com.tianling.handler.phone.message.PhoneMessageClient;
@@ -15,6 +17,7 @@ import com.tianling.utils.WebClientUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.FastByteArrayOutputStream;
@@ -28,6 +31,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 
 /**
  * @author Tianling
@@ -102,6 +106,16 @@ public class ValidateCodeController {
         });
     }
 
+//    @PostMapping(value = "/addUser",produces = MediaType.APPLICATION_JSON_VALUE)
+//    public Mono<ResponseInfo> addUser(@RequestBody User user ){
+//        return Mono.just(user)
+//                .map(user1->{
+//                    String encode = passwordEncoder.encode(user1.getUserPass());
+//                    user1.setUserPass(encode);
+//                    return user;
+//                }).flatMap(user2-> webClientUtils.postMethodReturnData("user/createUser",user2));
+//    }
+
     @PostMapping(value = "/addUser",produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseInfo> addUser(@RequestBody User user ){
         return Mono.just(user)
@@ -109,7 +123,24 @@ public class ValidateCodeController {
                     String encode = passwordEncoder.encode(user1.getUserPass());
                     user1.setUserPass(encode);
                     return user;
-                }).flatMap(user2-> webClientUtils.postMethodReturnData("user/createUser",user2));
+                }).flatMap(user2->
+                         webClientUtils.postMethodReturnData("user/createUser",user2)
+                                    .log()
+                                    .flatMap(responseInfo -> {
+                                        if(responseInfo.getCode() == HttpStatus.OK.value()){
+                                            LinkedHashMap data = (LinkedHashMap) responseInfo.getData();
+                                            Role role = new Role();
+                                            role.setUserId((Integer) data.get("id"));
+                                            role.setUserRole("common");
+                                            Authority authority = new Authority();
+                                            authority.setUserId((Integer) data.get("id"));
+                                            authority.setUserAuthority("/category/**");
+                                            return Mono.zip(webClientUtils.postMethodReturnData("role/addRole", role),
+                                                    webClientUtils.postMethodReturnData("authority/addAuthority", authority)).then(Mono.just(responseInfo));
+                                        }
+                                        return Mono.just(responseInfo);
+                                    })
+                );
     }
 
     @SneakyThrows

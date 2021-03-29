@@ -10,6 +10,7 @@ import com.tianling.handler.auth.manager.AuthenticationManager;
 import com.tianling.handler.auth.manager.AuthorizeConfigManager;
 import com.tianling.handler.auth.manager.TelPhoneAuthenticationManager;
 import com.tianling.handler.auth.success.JsonServerAuthenticationSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -62,8 +63,9 @@ public class SecurityConfig {
     @Resource
     private ValidatorFilter validatorFilter;
 
+    @Value("#{'${webfilter.path}'.split(',')}")
+    String[] AUTH_WHITELIST;
 
-    private static final String[] AUTH_WHITELIST = new String[]{"/login","/logout","/websocket/**","/field-explain/**","/common-api/**","/code/**","/auth/phone","/tel/**","/addUser"};
 
     @Bean
     @Order(0)
@@ -93,7 +95,6 @@ public class SecurityConfig {
                 .addFilterAfter(tokenAuthenticationFilter, SecurityWebFiltersOrder.FIRST)
                 .formLogin()
                 .loginPage("/login")
-
                 // 登录成功handler
                 .authenticationSuccessHandler(jsonServerAuthenticationSuccessHandler)
                 // 登陆失败handler
