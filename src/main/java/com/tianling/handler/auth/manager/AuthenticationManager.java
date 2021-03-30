@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 /**
  * @author TianLing
@@ -59,7 +60,19 @@ public class AuthenticationManager extends AbstractUserDetailsReactiveAuthentica
                         return mySqlReactiveUserDetailsService.updatePassword(u, newPassword);
                     }
                     return Mono.just(u);
-                }).map(u -> {
+                }).flatMap(u2->{
+                    LinkedHashMap info = (LinkedHashMap) (((AuthenticationUser) u2).getInfo());
+                    return  mySqlReactiveUserDetailsService
+                            .updateUserLoginTime((Integer) info.get("id"))
+                            .flatMap(responseInfo -> {
+                                LinkedHashMap data =  (LinkedHashMap)(responseInfo.getData());
+                                info.put("recentlyTime",data.get("recentlyTime"));
+                                info.put("previousTime",data.get("previousTime"));
+                                return Mono.just(u2);
+                            });
+                })
+
+                .map(u -> {
                     ArrayList<Object> list = new ArrayList<>();
                     list.add(((AuthenticationUser)u).getInfo());
                     return new AuthenticationToken(u, u.getPassword(), u.getAuthorities(),list);

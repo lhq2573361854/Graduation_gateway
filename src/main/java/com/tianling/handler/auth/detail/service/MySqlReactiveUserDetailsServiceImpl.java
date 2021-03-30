@@ -1,6 +1,7 @@
 package com.tianling.handler.auth.detail.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tianling.entities.ResponseInfo;
 import com.tianling.handler.auth.entities.TransformMessage;
 import com.tianling.utils.AuthenticationUserUtils;
 import com.tianling.utils.WebClientUtils;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * @author TianLing
@@ -69,6 +72,23 @@ public class MySqlReactiveUserDetailsServiceImpl implements ReactiveUserDetailsS
                         webClientUtils.getMethodReturnData("role/getRoleByUserName/" + username),
                         webClientUtils.getMethodReturnData("authority/getAuthorityByUserName/" + username)).doOnError(Mono::error)
                         .map(authenticationUserUtils.getTuple3UserDetailsFunction(username));
+
+    }
+
+    public Mono<ResponseInfo> updateUserLoginTime(Integer id){
+       return  webClientUtils.getMethodReturnData("user/getUserById/"+Integer.valueOf(id))
+                .flatMap(linkedHashMap -> {
+                    String recentlyTime = (String) linkedHashMap.get("recentlyTime");
+
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    LocalDateTime parse = LocalDateTime.parse(recentlyTime, dateTimeFormatter);
+
+                    com.tianling.entities.User user = new com.tianling.entities.User();
+                    user.setId(id);
+                    user.setRecentlyTime(LocalDateTime.now());
+                    user.setPreviousTime(parse);
+                    return  webClientUtils.postMethodReturnData("user/updateUserById",user);
+                });
 
     }
 

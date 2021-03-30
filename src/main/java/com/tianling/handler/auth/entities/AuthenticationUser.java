@@ -15,6 +15,7 @@ import java.util.Collection;
 @Getter
 @Setter
 public class AuthenticationUser  extends User {
+
     private Object info;
 
     public AuthenticationUser(String username, String password, Collection<? extends GrantedAuthority> authorities, Object info) {

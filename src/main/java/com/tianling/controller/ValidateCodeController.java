@@ -42,29 +42,21 @@ import java.util.LinkedHashMap;
 @Slf4j
 @RequestMapping("/code")
 public class ValidateCodeController {
+    public static final String SESSION_VALIDATECODE_IMAGE = "image_validateCode";
+    public static final String SESSION_VALIDATECODE_PHONE = "phone_validateCode";
     @Resource
     PhoneMessageClient phoneMessageClient;
-
     @Resource
     Producer producer;
-
     @Resource
     ObjectMapper objectMapper;
-
     @Resource
     WebClientUtils webClientUtils;
-
     @Resource
     PasswordEncoder passwordEncoder;
 
-    public static final String SESSION_VALIDATECODE_IMAGE="image_validateCode";
-
-    public static final String SESSION_VALIDATECODE_PHONE="phone_validateCode";
-
-
-
     @GetMapping("/validate")
-    public Mono<DataBuffer> imageValidateCode(ServerWebExchange serverWebExchange){
+    public Mono<DataBuffer> imageValidateCode(ServerWebExchange serverWebExchange) {
         String capText = producer.createText();
         String capStr = capText.substring(0, capText.lastIndexOf("@"));
         String code = capText.substring(capText.lastIndexOf("@") + 1);
@@ -76,30 +68,31 @@ public class ValidateCodeController {
             log.error("ImageIO write err", e);
             return Mono.error(e);
         }
-       return  serverWebExchange.getSession().flatMap(webSession -> {
-            webSession.getAttributes().put(SESSION_VALIDATECODE_IMAGE,code);
-            return  Mono.just(serverWebExchange.getResponse().bufferFactory().wrap(os.toByteArray()));
+        return serverWebExchange.getSession().flatMap(webSession -> {
+            webSession.getAttributes().put(SESSION_VALIDATECODE_IMAGE, code);
+            return Mono.just(serverWebExchange.getResponse().bufferFactory().wrap(os.toByteArray()));
         });
     }
+
     @GetMapping("/tel/{phone}")
-    public Mono<ResponseInfo<String>> getTelPhoneCode(@PathVariable String phone, ServerWebExchange serverWebExchange){
-        log.info("phone = {}",phone);
+    public Mono<ResponseInfo<String>> getTelPhoneCode(@PathVariable String phone, ServerWebExchange serverWebExchange) {
+        log.info("phone = {}", phone);
         StringBuilder sb = new StringBuilder(10);
         for (int i = 0; i < 6; i++) {
             sb.append(RandomUtil.randomInt(0, 9));
         }
-        log.info("code = {}",sb.toString());
-        return  serverWebExchange.getSession().flatMap(webSession -> {
-            webSession.getAttributes().put(SESSION_VALIDATECODE_PHONE,sb.toString());
-            return  Mono.just(phoneMessageClient.sendMessage(phone,sb.toString()));
-        }).log().flatMap(json-> {
+        log.info("code = {}", sb.toString());
+        return serverWebExchange.getSession().flatMap(webSession -> {
+            webSession.getAttributes().put(SESSION_VALIDATECODE_PHONE, sb.toString());
+            return Mono.just(phoneMessageClient.sendMessage(phone, sb.toString()));
+        }).log().flatMap(json -> {
             PhoneMessageResponseInfo phoneMessageResponseInfo;
             try {
-                phoneMessageResponseInfo =  objectMapper.readValue(json, PhoneMessageResponseInfo.class);
+                phoneMessageResponseInfo = objectMapper.readValue(json, PhoneMessageResponseInfo.class);
             } catch (JsonProcessingException e) {
-               return Mono.error(e);
+                return Mono.error(e);
             }
-            if(phoneMessageResponseInfo.getCode().equals(0)){
+            if (phoneMessageResponseInfo.getCode().equals(0)) {
                 return HttpResponseMessageUtils.sendMessageSuccess();
             }
             return HttpResponseMessageUtils.sendMessageFailed();
@@ -116,40 +109,40 @@ public class ValidateCodeController {
 //                }).flatMap(user2-> webClientUtils.postMethodReturnData("user/createUser",user2));
 //    }
 
-    @PostMapping(value = "/addUser",produces = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<ResponseInfo> addUser(@RequestBody User user ){
+    @PostMapping(value = "/addUser", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseInfo> addUser(@RequestBody User user) {
         return Mono.just(user)
-                .map(user1->{
+                .map(user1 -> {
                     String encode = passwordEncoder.encode(user1.getUserPass());
                     user1.setUserPass(encode);
                     return user;
-                }).flatMap(user2->
-                         webClientUtils.postMethodReturnData("user/createUser",user2)
-                                    .log()
-                                    .flatMap(responseInfo -> {
-                                        if(responseInfo.getCode() == HttpStatus.OK.value()){
-                                            LinkedHashMap data = (LinkedHashMap) responseInfo.getData();
-                                            Role role = new Role();
-                                            role.setUserId((Integer) data.get("id"));
-                                            role.setUserRole("common");
-                                            Authority authority = new Authority();
-                                            authority.setUserId((Integer) data.get("id"));
-                                            authority.setUserAuthority("/category/**");
-                                            return Mono.zip(webClientUtils.postMethodReturnData("role/addRole", role),
-                                                    webClientUtils.postMethodReturnData("authority/addAuthority", authority)).then(Mono.just(responseInfo));
-                                        }
-                                        return Mono.just(responseInfo);
-                                    })
+                }).flatMap(user2 ->
+                        webClientUtils.postMethodReturnData("user/createUser", user2)
+                                .log()
+                                .flatMap(responseInfo -> {
+                                    if (responseInfo.getCode() == HttpStatus.OK.value()) {
+                                        LinkedHashMap data = (LinkedHashMap) responseInfo.getData();
+                                        Role role = new Role();
+                                        role.setUserId((Integer) data.get("id"));
+                                        role.setUserRole("common");
+                                        Authority authority = new Authority();
+                                        authority.setUserId((Integer) data.get("id"));
+                                        authority.setUserAuthority("/category/**");
+                                        return Mono.zip(webClientUtils.postMethodReturnData("role/addRole", role),
+                                                webClientUtils.postMethodReturnData("authority/addAuthority", authority)).then(Mono.just(responseInfo));
+                                    }
+                                    return Mono.just(responseInfo);
+                                })
                 );
     }
 
     @SneakyThrows
-    private <T> T  mapToEntity(MultiValueMap map, Class<T> clazz) {
+    private <T> T mapToEntity(MultiValueMap map, Class<T> clazz) {
         T t = ReflectUtil.newInstance(clazz);
         Field[] fields = ReflectUtil.getFields(clazz);
         for (Field field : fields) {
-            if(!StrUtil.equals(field.getName(),"serialVersionUID")){
-                ReflectUtil.setFieldValue(t,field,map.getFirst(field.getName()));
+            if (!StrUtil.equals(field.getName(), "serialVersionUID")) {
+                ReflectUtil.setFieldValue(t, field, map.getFirst(field.getName()));
             }
         }
         return t;
